@@ -29,7 +29,7 @@ def get_data() -> tuple:
     Returns:
         Training and testing dataset
     """
-    DATA_DIR = Path("../data")
+    DATA_DIR = Path("data/")
     if DATA_DIR.is_dir():  # if directory exist, delete it
         shutil.rmtree(DATA_DIR)
 

@@ -7,6 +7,8 @@ import model
 import torchmetrics
 from torchmetrics import Accuracy
 from tqdm import tqdm
+from typing import Tuple, Any
+from progress.bar import Bar
 
 
 def train(
@@ -16,7 +18,7 @@ def train(
     optimizer: torch.optim.Optimizer,
     acc_fn: torchmetrics.Metric,
     device: str,
-):
+) -> Tuple[Any, Any]:
     """
     Train the model
 
@@ -31,10 +33,24 @@ def train(
     Returns:
         Train loss and Train Accuracy
     """
-
-    for batch, (X, y) in enumerate(loader):
-        pass
-    return 0, 0
+    t_loss = 0
+    t_acc = 0
+    model.train()
+    with Bar("Training model...", max=len(loader)) as bar:
+        for batch, (X, y) in enumerate(loader):
+            X, y = X.to(device), y.to(device)
+            y_pred = model(X)
+            loss = loss_fn(y_pred, y)
+            t_loss += loss
+            t_acc += acc_fn(y_pred, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            bar.next()
+    # Average loss and accuracy per batch
+    t_loss = t_loss / len(loader)
+    t_acc = t_acc / len(loader)
+    return t_loss, t_acc
 
 
 def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
@@ -52,17 +68,17 @@ def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
     acc_f = Accuracy(task="multiclass", num_classes=10)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    print(type(LeNet), type(loss_f), type(optimizer))
-
-    for i in tqdm(range(epochs)):
+    for i in range(0, epochs):
+        print(f"Epoch {i}")
         train_loss, train_acc = train(
             loader=train_loader,
-            model=LeNet,
+            model=LeNet.to(device),
             loss_fn=loss_f,
             optimizer=optimizer,
             acc_fn=acc_f,
             device=device,
         )
+        print(f"Train loss: {train_loss}, Train acc: {train_acc}")
 
 
 if __name__ == "__main__":
