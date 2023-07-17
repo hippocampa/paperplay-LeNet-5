@@ -6,7 +6,6 @@ import torch.utils.data
 import model
 import torchmetrics
 from torchmetrics import Accuracy
-from tqdm import tqdm
 from typing import Tuple, Any
 from progress.bar import Bar
 
@@ -47,10 +46,47 @@ def train(
             loss.backward()
             optimizer.step()
             bar.next()
-    # Average loss and accuracy per batch
-    t_loss = t_loss / len(loader)
-    t_acc = t_acc / len(loader)
+        # Average loss and accuracy per batch
+        t_loss = t_loss / len(loader)
+        t_acc = t_acc / len(loader)
     return t_loss, t_acc
+
+
+def test(
+    loader: torch.utils.data.DataLoader,
+    model: torch.nn.Module,
+    loss_fn: torch.nn.Module,
+    acc_fn: torchmetrics.Metric,
+    device: str,
+) -> Tuple[Any, Any]:
+    """
+    Testing the model
+
+    Args:
+        model: pytorch model
+        loss_fn: pytorch loss function
+        acc_fn: torchmetrics multiclass accuracy function
+        device: pytorch device (cpu or gpu)
+
+    Returns:
+        A tuple of test loss and test accuracy.
+    """
+    test_loss = 0
+    test_acc = 0
+
+    model.eval()
+    with torch.inference_mode():
+        with Bar("Testing model...", max=len(loader)) as bar:
+            for X, y in loader:
+                X, y = X.to(device), y.to(device)
+                y_pred = model(X)
+                loss = loss_fn(y_pred, y)
+                test_loss += loss
+                test_acc += acc_fn(y_pred, y)
+                bar.next()
+            test_loss = test_loss / len(loader)
+            test_acc = test_acc / len(loader)
+    return test_loss, test_acc
 
 
 def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
@@ -78,7 +114,13 @@ def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
             acc_fn=acc_f,
             device=device,
         )
-        print(f"Train loss: {train_loss}, Train acc: {train_acc}")
+        test_loss, test_acc = test(test_loader, LeNet, loss_f, acc_f, device)
+        print(
+            f"Train loss: {train_loss}, Train acc: {train_acc}, Test loss: {test_loss}, Test acc: {test_acc} "
+        )
+    PATH = "savedmodels/mark1.pt"
+    torch.save(LeNet.state_dict(), PATH)
+    print(f"Training is complete, model is saved at {PATH}")
 
 
 if __name__ == "__main__":
