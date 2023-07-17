@@ -24,6 +24,15 @@ def get_label(fpath: str) -> str:
 
 
 def makepred(file: str) -> None:
+    """
+    Make prediction of a given image.
+
+    Args:
+        file: image directory
+
+    Return:
+        None
+    """
     label = get_label(file)
     image = Image.open(file)
     transformed_img = transform.transform_fn(image)
