@@ -4,6 +4,7 @@ from dataset import load_data
 import torch
 import torch.utils.data
 import model
+from lenet5 import LeNetOri
 import torchmetrics
 from torchmetrics import Accuracy
 from typing import Tuple, Any
@@ -97,7 +98,8 @@ def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
     )
 
     # model
-    LeNet = model.LeNet5()
+    # LeNet = model.LeNet5()
+    LeNet = LeNetOri()
 
     loss_f = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(params=LeNet.parameters(), lr=learningrate)
@@ -118,7 +120,7 @@ def main(batchsize: int = 1, learningrate: float = 0.01, epochs: int = 2):
         print(
             f"Train loss: {train_loss}, Train acc: {train_acc}, Test loss: {test_loss}, Test acc: {test_acc} "
         )
-    PATH = "savedmodels/mark1.pt"
+    PATH = "savedmodels/moiLenet.pt"
     torch.save(LeNet.state_dict(), PATH)
     print(f"Training is complete, model is saved at {PATH}")
 
